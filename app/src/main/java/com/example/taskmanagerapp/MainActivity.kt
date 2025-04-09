@@ -24,6 +24,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.taskmanagerapp.data.*
 import com.example.taskmanagerapp.ui.AddEditTaskScreen
 import com.example.taskmanagerapp.ui.TaskDetailScreen
+import com.example.taskmanagerapp.ui.HomeScreen
 import com.example.taskmanagerapp.viewmodel.TaskViewModel
 import com.example.taskmanagerapp.viewmodel.TaskViewModelFactory
 import com.example.taskmanagerapp.ui.theme.TaskManagerAppTheme
@@ -49,19 +50,33 @@ fun AppContent() {
 
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "task_list") {
+    NavHost(navController = navController, startDestination = "home") {
+
+        composable("home") {
+            HomeScreen(
+                onSeeTasksClick = { navController.navigate("task_list") },
+                onAddTaskClick = { navController.navigate("add_task") }
+            )
+        }
+
         composable("task_list") {
             TaskListScreen(
                 viewModel = viewModel,
                 onAddClick = { navController.navigate("add_task") },
-                onTaskClick = { taskId -> navController.navigate("detail/$taskId") }
+                onTaskClick = { taskId ->
+                    navController.navigate("detail/$taskId")
+                }
             )
         }
 
         composable("add_task") {
             AddEditTaskScreen(
                 viewModel = viewModel,
-                onTaskSaved = { navController.popBackStack() }
+                onNavigateBack = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = false }
+                    }
+                }
             )
         }
 
@@ -72,11 +87,22 @@ fun AppContent() {
             task?.let {
                 TaskDetailScreen(
                     task = it,
-                    onBack = { navController.popBackStack() },
-                    onUpdate = { updated -> viewModel.updateTask(updated) },
+                    onBack = {
+                        navController.navigate("home") {
+                            popUpTo("home") { inclusive = false }
+                        }
+                    },
+                    onUpdate = { updated ->
+                        viewModel.updateTask(updated)
+                        navController.navigate("home") {
+                            popUpTo("home") { inclusive = false }
+                        }
+                    },
                     onDelete = {
                         viewModel.deleteTask(it)
-                        navController.popBackStack()
+                        navController.navigate("home") {
+                            popUpTo("home") { inclusive = false }
+                        }
                     }
                 )
             }
